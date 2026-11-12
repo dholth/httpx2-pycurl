@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 import pycurl
 import pytest
 
-from httpx_pycurl.curl import AsyncCurl
+from httpx2_pycurl.curl import AsyncCurl
 
 
 @pytest.mark.asyncio

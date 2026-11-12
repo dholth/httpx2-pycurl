@@ -1,5 +1,5 @@
 """
-Compare httpx, httpx_pycurl and niquests.
+Compare httpx2, httpx2_pycurl and niquests.
 """
 
 import asyncio
@@ -7,14 +7,14 @@ import statistics
 import sys
 import time
 
-import httpx
+import httpx2
 import niquests
 
-import httpx_pycurl
+import httpx2_pycurl
 
 URL = "https://httpbingo.org/get"
 
-USER_AGENT = "httpx-pycurl (bench)"
+USER_AGENT = "httpx2-pycurl (bench)"
 DEFAULT_HEADERS = {"User-Agent": USER_AGENT}
 
 
@@ -32,20 +32,20 @@ async def bench(PARTITIONS, COUNT):
     niquests_session = niquests.AsyncSession()
     niquests_session.headers.update(DEFAULT_HEADERS)
 
-    httpx_session = httpx.AsyncClient(http2=True)
-    httpx_session.headers.update(DEFAULT_HEADERS)
+    httpx2_session = httpx2.AsyncClient(http2=True)
+    httpx2_session.headers.update(DEFAULT_HEADERS)
 
     # XXX AsyncPyCurlTransport sets `curl.setopt(pycurl.USERAGENT, user_agent)`
     # but a regular header has the same effect.
-    httpx_pycurl_session = httpx.AsyncClient(
-        transport=httpx_pycurl.AsyncPyCurlTransport(user_agent=USER_AGENT)
+    httpx2_pycurl_session = httpx2.AsyncClient(
+        transport=httpx2_pycurl.AsyncPyCurlTransport(user_agent=USER_AGENT)
     )
-    httpx_pycurl_session.headers.update(DEFAULT_HEADERS)
+    httpx2_pycurl_session.headers.update(DEFAULT_HEADERS)
 
     clients = [
-        (httpx_session, "httpx"),
+        (httpx2_session, "httpx2"),
         (niquests_session, "niquests"),
-        (httpx_pycurl_session, "httpx_pycurl"),
+        (httpx2_pycurl_session, "httpx2_pycurl"),
     ]
 
     print(f"{PARTITIONS} groups of {COUNT} requests each...")
@@ -66,8 +66,8 @@ async def bench(PARTITIONS, COUNT):
     for name, times in results_by_client.items():
         print(f"{name}: {statistics.mean(times):.3f}s ± {statistics.stdev(times):.3f}s")
 
-    # Compare httpx_pycurl vs niquests
-    pycurl = results_by_client["httpx_pycurl"]
+    # Compare httpx2_pycurl vs niquests
+    pycurl = results_by_client["httpx2_pycurl"]
     niquests_times = results_by_client["niquests"]
 
     mean_diff = statistics.mean(pycurl) - statistics.mean(niquests_times)
@@ -77,14 +77,14 @@ async def bench(PARTITIONS, COUNT):
     )
     t_stat = mean_diff / se_diff if se_diff else 0
 
-    print("\nPaired t-test: httpx_pycurl vs niquests")
+    print("\nPaired t-test: httpx2_pycurl vs niquests")
     print(f"t-stat: {t_stat:.3f} (approx p < 0.05 if |t| > 2.365)")
     print(f"Speedup: {statistics.mean(niquests_times) / statistics.mean(pycurl):.2f}x")
 
 
 if __name__ == "__main__":
     # niquests seems to shine when batch sizes are large. When batch sizes are
-    # smaller, i.e. 128 requests each, vanilla httpx and niquests seem to be
+    # smaller, i.e. 128 requests each, vanilla httpx2 and niquests seem to be
     # closer.
 
     PARTITIONS = 4

@@ -13,13 +13,13 @@ index 858bca1..b5d70c0 100644
 +
 +
 +def pytest_configure(config):
-+    """Patch httpx.Client to use PyCurlTransport and httpx.AsyncClient to use AsyncPyCurlTransport."""
++    """Patch httpx2.Client to use PyCurlTransport and httpx2.AsyncClient to use AsyncPyCurlTransport."""
 +    global _pycurl_patched
 +    try:
-+        from httpx_pycurl import PyCurlTransport, AsyncPyCurlTransport
++        from httpx2_pycurl import PyCurlTransport, AsyncPyCurlTransport
 +
 +        # Patch sync Client to use PyCurlTransport
-+        _original_sync_init = httpx.Client.__init__
++        _original_sync_init = httpx2.Client.__init__
 +
 +        def patched_sync_init(self, *args, **kwargs):
 +            # If no transport is specified, we'll replace it with PyCurlTransport
@@ -34,20 +34,20 @@ index 858bca1..b5d70c0 100644
 +                except Exception as e:
 +                    pass
 +
-+        httpx.Client.__init__ = patched_sync_init
++        httpx2.Client.__init__ = patched_sync_init
 +
 +        # Patch AsyncClient to use AsyncPyCurlTransport
-+        _original_async_init = httpx.AsyncClient.__init__
++        _original_async_init = httpx2.AsyncClient.__init__
 +
 +        def patched_async_init(self, *args, **kwargs):
 +            # Apply original init first
 +            _original_async_init(self, *args, **kwargs)
 +            # We'll replace transport at first request time to ensure event loop is running
 +
-+        httpx.AsyncClient.__init__ = patched_async_init
++        httpx2.AsyncClient.__init__ = patched_async_init
 +
 +        # Patch AsyncClient._send_single_request to replace transport at request time
-+        _original_send_single_request = httpx.AsyncClient._send_single_request
++        _original_send_single_request = httpx2.AsyncClient._send_single_request
 +
 +        async def patched_send_single_request(self, request):
 +            # Only use pycurl transport for asyncio, not for trio
@@ -79,7 +79,7 @@ index 858bca1..b5d70c0 100644
 +
 +            return await _original_send_single_request(self, request)
 +
-+        httpx.AsyncClient._send_single_request = patched_send_single_request
++        httpx2.AsyncClient._send_single_request = patched_send_single_request
 +        _pycurl_patched = True
 +    except Exception as e:
 +        # Debug: print any errors during patching

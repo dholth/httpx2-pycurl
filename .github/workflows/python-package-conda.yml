@@ -12,18 +12,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          path: httpx-pycurl
+          path: httpx2-pycurl
 
-      - name: Checkout httpx
+      - name: Checkout httpx2
         uses: actions/checkout@v4
         with:
-          repository: encode/httpx
-          path: httpx
+          repository: pydantic/httpx2
+          path: httpx2
 
-      - name: Set up Python 3.10
+      - name: Set up Python 3.11
         uses: actions/setup-python@v3
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
       - name: Add conda to system path
         run: |
@@ -32,21 +32,21 @@ jobs:
 
       - name: Install dependencies
         run: |
-          conda install conda-pypi pytest nginx pytest-asyncio pytest-xprocess trustme httpx pycurl h2 chardet zstandard brotli trio uvicorn cryptography
+          conda install conda-pypi pytest nginx pytest-asyncio pytest-xprocess trustme httpx2 pycurl h2 chardet zstandard brotli trio uvicorn cryptography
           conda pypi install --ignore-channels socksio
-          conda pypi install -e httpx-pycurl/
+          conda pypi install -e httpx2-pycurl/
 
-      - name: Apply httpx patch
+      - name: Apply httpx2 patch
         run: |
-          cd httpx
-          git apply ../httpx-pycurl/tests/httpx-tests.patch
+          cd httpx2
+          git apply ../httpx2-pycurl/tests/httpx2-tests.patch
 
-      - name: Run httpx-pycurl tests
+      - name: Run httpx2-pycurl tests
         run: |
-          cd httpx-pycurl
+          cd httpx2-pycurl
           pytest
 
-      - name: Run httpx tests with httpx-pycurl transport
+      - name: Run httpx2 tests with httpx2-pycurl transport
         run: |
-          cd httpx
+          cd httpx2
           pytest -k "not anyio and not test_main and not autodetect and not cp_1252 and not cp1252 and not explicit_encoding" -v

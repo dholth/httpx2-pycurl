@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 import anyio
 import certifi
-import httpx
+import httpx2
 import pycurl
 
 from .curl import AsyncCurl, PerformHandle
@@ -40,7 +40,7 @@ class _TransferContext:
 class _Transfer:
     """Represents an in-flight HTTP request through pycurl."""
 
-    request: httpx.Request
+    request: httpx2.Request
     context: _TransferContext
     future: asyncio.Future
 
@@ -67,7 +67,7 @@ class _RequestBodyReader:
         Async streams are fully consumed into memory before returning so that
         pycurl's synchronous read callback can iterate them without blocking.
         """
-        # httpx.ByteStream has both __iter__ and __aiter__; prefer sync path.
+        # httpx2.ByteStream has both __iter__ and __aiter__; prefer sync path.
         if hasattr(stream, "__iter__"):
             return cls(iter(stream))  # type: ignore[arg-type]
         if hasattr(stream, "__aiter__"):
@@ -98,7 +98,7 @@ class _RequestBodyReader:
         return data
 
 
-class _SpooledFileStream(httpx.SyncByteStream, httpx.AsyncByteStream):
+class _SpooledFileStream(httpx2.SyncByteStream, httpx2.AsyncByteStream):
     """Unified file-based stream supporting both sync and async iteration."""
 
     def __init__(self, body_file: BinaryIO, chunk_size: int = 65536):
@@ -126,7 +126,7 @@ class _SpooledFileStream(httpx.SyncByteStream, httpx.AsyncByteStream):
         await anyio.to_thread.run_sync(self._body_file.close)
 
 
-class _AsyncQueueStream(httpx.AsyncByteStream):
+class _AsyncQueueStream(httpx2.AsyncByteStream):
     """Async byte stream that collects write_callback values from a queue.
 
     Pycurl callbacks are executed synchronously within the event loop,
@@ -187,25 +187,25 @@ def _parse_status_line(status_line: bytes | None) -> tuple[str, bytes]:
 
 def _map_pycurl_error(
     code: int, message: str, curl: pycurl.Curl | None = None
-) -> httpx.TransportError:
-    """Map pycurl error codes to appropriate httpx exceptions."""
+) -> httpx2.TransportError:
+    """Map pycurl error codes to appropriate httpx2 exceptions."""
     # pycurl error code 1 is UNSUPPORTED_PROTOCOL
     if code == pycurl.E_UNSUPPORTED_PROTOCOL:
-        return httpx.UnsupportedProtocol(f"Protocol not supported: {message}")
+        return httpx2.UnsupportedProtocol(f"Protocol not supported: {message}")
 
     # URL format errors
     if code == pycurl.E_URL_MALFORMAT or code == pycurl.E_BAD_FUNCTION_ARGUMENT:
         # Check if it's a port-related error
         if "port" in message.lower():
-            return httpx.ConnectError(f"Connection error: {message}")
-        return httpx.LocalProtocolError(f"Invalid URL: {message}")
+            return httpx2.ConnectError(f"Connection error: {message}")
+        return httpx2.LocalProtocolError(f"Invalid URL: {message}")
 
     # Connection/timeout errors
     if code in (
         pycurl.E_COULDNT_RESOLVE_HOST,
         pycurl.E_COULDNT_CONNECT,
     ):
-        return httpx.ConnectError(f"Connection error: {message}")
+        return httpx2.ConnectError(f"Connection error: {message}")
 
     if code == pycurl.E_OPERATION_TIMEDOUT:
         # Distinguish connect timeout from read timeout using connect time info.
@@ -214,22 +214,22 @@ def _map_pycurl_error(
             try:
                 connect_time = curl.getinfo(pycurl.CONNECT_TIME)
                 if connect_time > 0:
-                    return httpx.ReadTimeout(f"Read timeout: {message}")
+                    return httpx2.ReadTimeout(f"Read timeout: {message}")
             except Exception:
                 pass
-        return httpx.ConnectTimeout(f"Connection timeout: {message}")
+        return httpx2.ConnectTimeout(f"Connection timeout: {message}")
 
     # Remote protocol errors
     if code == pycurl.E_PARTIAL_FILE:
-        return httpx.RemoteProtocolError(f"{message}")
+        return httpx2.RemoteProtocolError(f"{message}")
 
     # Default to TransportError
-    return httpx.TransportError(f"pycurl error {code}: {message}")
+    return httpx2.TransportError(f"pycurl error {code}: {message}")
 
 
 def _set_curl_timeouts(
     curl: pycurl.Curl,
-    request: httpx.Request,
+    request: httpx2.Request,
     timeout: float | None,
 ) -> None:
     """Apply connect and operation timeouts to a curl handle."""
@@ -250,7 +250,7 @@ def _set_curl_timeouts(
 
 def _set_curl_options(
     curl: pycurl.Curl,
-    request: httpx.Request,
+    request: httpx2.Request,
     context: _TransferContext,
     *,
     verify: bool,
@@ -319,7 +319,7 @@ def _set_curl_options(
 
 def _set_curl_method(
     curl: pycurl.Curl,
-    request: httpx.Request,
+    request: httpx2.Request,
     body_reader: _RequestBodyReader | None,
 ) -> None:
     """Configure the HTTP method and request body on a curl handle."""
@@ -358,7 +358,7 @@ def _set_curl_method(
 
 def _configure_curl(
     curl: pycurl.Curl,
-    request: httpx.Request,
+    request: httpx2.Request,
     context: _TransferContext,
     *,
     timeout: float | None,
@@ -400,7 +400,7 @@ def _finalize_transfer(curl: pycurl.Curl, context: _TransferContext) -> None:
         context.response_body.seek(0)
 
 
-class AsyncPyCurlTransport(httpx.AsyncBaseTransport):
+class AsyncPyCurlTransport(httpx2.AsyncBaseTransport):
     def __init__(
         self,
         timeout: float | None = None,
@@ -432,22 +432,22 @@ class AsyncPyCurlTransport(httpx.AsyncBaseTransport):
         # Track in-flight transfers
         self._transfers: dict[pycurl.Curl, _Transfer] = {}
 
-    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+    async def handle_async_request(self, request: httpx2.Request) -> httpx2.Response:
         if self._closed:
-            raise httpx.TransportError("transport is closed")
+            raise httpx2.TransportError("transport is closed")
 
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
             # Not running in asyncio (e.g., trio), so we can't use this transport
-            raise httpx.TransportError(
+            raise httpx2.TransportError(
                 "AsyncPyCurlTransport only supports asyncio event loops, not trio"
             )
 
         if self._loop is None:
             self._loop = loop
         elif self._loop is not loop:
-            raise httpx.TransportError(
+            raise httpx2.TransportError(
                 "AsyncPyCurlTransport must be used from one event loop"
             )
 
@@ -518,7 +518,7 @@ class AsyncPyCurlTransport(httpx.AsyncBaseTransport):
                 if handle.completion_future.done():
                     # Transfer finished before (or at same time as) headers.
                     self._transfers.pop(curl, None)
-                    perform_error: httpx.TransportError | None = None
+                    perform_error: httpx2.TransportError | None = None
                     try:
                         handle.completion_future.result()
                     except pycurl.error as error:
@@ -538,7 +538,7 @@ class AsyncPyCurlTransport(httpx.AsyncBaseTransport):
                         self._finish_streaming(handle, context, async_stream, curl)
                     )
 
-                return httpx.Response(
+                return httpx2.Response(
                     status_code=context.status_code,
                     headers=context.response_headers,
                     stream=context.async_stream
@@ -561,14 +561,14 @@ class AsyncPyCurlTransport(httpx.AsyncBaseTransport):
             if perform_error is not None and context.status_code == 0:
                 raise perform_error
 
-            return httpx.Response(
+            return httpx2.Response(
                 status_code=context.status_code,
                 headers=context.response_headers,
                 stream=_SpooledFileStream(context.response_body),
                 request=request,
                 extensions={"http_version": context.http_version},
             )
-        except httpx.TransportError:
+        except httpx2.TransportError:
             raise
         except pycurl.error as error:
             self._transfers.pop(curl, None)

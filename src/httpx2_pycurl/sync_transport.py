@@ -5,7 +5,7 @@ from tempfile import SpooledTemporaryFile
 from typing import TYPE_CHECKING
 
 import certifi
-import httpx
+import httpx2
 import pycurl
 
 from .transport import (
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from typing import Callable
 
 
-class PyCurlTransport(httpx.BaseTransport):
+class PyCurlTransport(httpx2.BaseTransport):
     def __init__(
         self,
         timeout: float | None = None,
@@ -42,9 +42,9 @@ class PyCurlTransport(httpx.BaseTransport):
         self._debug_logger = debug_logger
         self._cainfo = cainfo or certifi.where()
 
-    def handle_request(self, request: httpx.Request) -> httpx.Response:
+    def handle_request(self, request: httpx2.Request) -> httpx2.Response:
         context = self._perform_request(request)
-        return httpx.Response(
+        return httpx2.Response(
             status_code=context.status_code,
             headers=context.response_headers,
             stream=_SpooledFileStream(context.response_body),
@@ -55,7 +55,7 @@ class PyCurlTransport(httpx.BaseTransport):
     def close(self) -> None:
         return
 
-    def _perform_request(self, request: httpx.Request) -> _TransferContext:
+    def _perform_request(self, request: httpx2.Request) -> _TransferContext:
         context = _TransferContext(
             response_body=SpooledTemporaryFile(max_size=1024 * 1024)
         )

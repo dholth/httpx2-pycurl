@@ -3,16 +3,16 @@ from __future__ import annotations
 import asyncio
 import time
 
-import httpx
+import httpx2
 import pytest
 
-from httpx_pycurl import transport
+from httpx2_pycurl import transport
 
 
 @pytest.mark.asyncio
 async def test_async_multi_socket_transport(ca_cert, server):
     async with transport.AsyncPyCurlTransport(cainfo=ca_cert, timeout=2) as tx:
-        request = httpx.Request("GET", server)
+        request = httpx2.Request("GET", server)
 
         response = await tx.handle_async_request(request)
 
@@ -23,7 +23,7 @@ async def test_async_multi_socket_transport(ca_cert, server):
 async def test_fetch_nginx(ca_cert, server):
     # note when running editor from flatpak on Linux /tmp/ is separate
     async with transport.AsyncPyCurlTransport(cainfo=ca_cert) as tx:
-        request = httpx.Request("GET", server)
+        request = httpx2.Request("GET", server)
         response = await tx.handle_async_request(request)
         assert response.status_code == 200
         body = (await response.aread()).decode("utf-8")
@@ -32,12 +32,12 @@ async def test_fetch_nginx(ca_cert, server):
 
     async with transport.AsyncPyCurlTransport() as tx:
         # E_PEER_FAILED_VERIFICATION 60
-        request = httpx.Request("GET", server)
-        with pytest.raises(httpx.TransportError, match="SSL"):
+        request = httpx2.Request("GET", server)
+        with pytest.raises(httpx2.TransportError, match="SSL"):
             # demonstrate error when no cert
             response = await tx.handle_async_request(request)
 
-    async with httpx.AsyncClient(
+    async with httpx2.AsyncClient(
         transport=transport.AsyncPyCurlTransport(cainfo=ca_cert)
     ) as client:
         response = await client.get(server)
@@ -49,9 +49,9 @@ async def test_fetch_nginx(ca_cert, server):
 async def test_fetch_nginx_parallel_data(ca_cert, server, regular, ssl_context):
     begin = time.monotonic_ns()
     if regular:
-        client = httpx.AsyncClient(http2=True, verify=ssl_context)
+        client = httpx2.AsyncClient(http2=True, verify=ssl_context)
     else:
-        client = httpx.AsyncClient(
+        client = httpx2.AsyncClient(
             transport=transport.AsyncPyCurlTransport(cainfo=ca_cert)
         )
     async with client as client:
@@ -80,9 +80,9 @@ async def test_fetch_nginx_parallel_streaming(ca_cert, server, regular, ssl_cont
     """Test streaming response bodies with stream() instead of get()."""
     begin = time.monotonic_ns()
     if regular:
-        client = httpx.AsyncClient(http2=True, verify=ssl_context)
+        client = httpx2.AsyncClient(http2=True, verify=ssl_context)
     else:
-        client = httpx.AsyncClient(
+        client = httpx2.AsyncClient(
             transport=transport.AsyncPyCurlTransport(cainfo=ca_cert)
         )
     async with client as client:
@@ -118,9 +118,9 @@ async def test_fetch_nginx_parallel_streaming_chunks(
     """Test streaming response bodies with chunk iteration instead of aread()."""
     begin = time.monotonic_ns()
     if regular:
-        client = httpx.AsyncClient(http2=True, verify=ssl_context)
+        client = httpx2.AsyncClient(http2=True, verify=ssl_context)
     else:
-        client = httpx.AsyncClient(
+        client = httpx2.AsyncClient(
             transport=transport.AsyncPyCurlTransport(cainfo=ca_cert)
         )
     async with client as client:
@@ -155,7 +155,7 @@ async def test_fetch_nginx_parallel_streaming_chunks(
 @pytest.mark.parametrize("regular", [True, False])
 @pytest.mark.asyncio
 async def test_timeout_behavior(regular, slow_server):
-    """Test timeout behavior comparing httpx and pycurl transports.
+    """Test timeout behavior comparing httpx2 and pycurl transports.
 
     Both should timeout with a short timeout against a slow server endpoint.
     """
@@ -163,12 +163,12 @@ async def test_timeout_behavior(regular, slow_server):
     timeout = 0.5  # 500ms timeout
 
     if regular:
-        # httpx AsyncHTTPTransport
-        client = httpx.AsyncClient(timeout=timeout)
-        transport_name = "httpx.AsyncHTTPTransport"
+        # httpx2 AsyncHTTPTransport
+        client = httpx2.AsyncClient(timeout=timeout)
+        transport_name = "httpx2.AsyncHTTPTransport"
     else:
         # AsyncPyCurlTransport
-        client = httpx.AsyncClient(
+        client = httpx2.AsyncClient(
             transport=transport.AsyncPyCurlTransport(timeout=timeout)
         )
         transport_name = "AsyncPyCurlTransport"
@@ -176,7 +176,7 @@ async def test_timeout_behavior(regular, slow_server):
     async with client:
         start = time.monotonic()
         with pytest.raises(
-            (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.TransportError)
+            (httpx2.ConnectTimeout, httpx2.ReadTimeout, httpx2.TransportError)
         ):
             await client.get(url)
         elapsed = time.monotonic() - start
@@ -199,12 +199,12 @@ async def test_timeout_behavior_streaming(regular, slow_server):
     timeout = 0.5  # 500ms timeout
 
     if regular:
-        # httpx AsyncHTTPTransport
-        client = httpx.AsyncClient(timeout=timeout)
-        transport_name = "httpx.AsyncHTTPTransport"
+        # httpx2 AsyncHTTPTransport
+        client = httpx2.AsyncClient(timeout=timeout)
+        transport_name = "httpx2.AsyncHTTPTransport"
     else:
         # AsyncPyCurlTransport
-        client = httpx.AsyncClient(
+        client = httpx2.AsyncClient(
             transport=transport.AsyncPyCurlTransport(timeout=timeout)
         )
         transport_name = "AsyncPyCurlTransport"
@@ -212,7 +212,7 @@ async def test_timeout_behavior_streaming(regular, slow_server):
     async with client:
         start = time.monotonic()
         with pytest.raises(
-            (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.TransportError)
+            (httpx2.ConnectTimeout, httpx2.ReadTimeout, httpx2.TransportError)
         ):
             async with client.stream("GET", url) as response:
                 async for chunk in response.aiter_bytes(chunk_size=4096):
@@ -234,17 +234,17 @@ async def test_response_closed_early(regular, short_server):
     timeout = 0.5  # 500ms timeout
 
     if regular:
-        # httpx AsyncHTTPTransport
-        client = httpx.AsyncClient(timeout=timeout)
+        # httpx2 AsyncHTTPTransport
+        client = httpx2.AsyncClient(timeout=timeout)
     else:
         # AsyncPyCurlTransport
-        client = httpx.AsyncClient(
+        client = httpx2.AsyncClient(
             transport=transport.AsyncPyCurlTransport(timeout=timeout)
         )
 
     chunks = []
     async with client:
-        with pytest.raises((httpx.RemoteProtocolError, httpx.ReadTimeout)):
+        with pytest.raises((httpx2.RemoteProtocolError, httpx2.ReadTimeout)):
             async with client.stream("GET", url) as response:
                 async for chunk in response.aiter_bytes():
                     chunks.append(chunk)
@@ -266,7 +266,7 @@ async def test_streaming_chunk_timing(slow_server):
     """
     url = f"{slow_server}stream"
 
-    async with httpx.AsyncClient(transport=transport.AsyncPyCurlTransport()) as client:
+    async with httpx2.AsyncClient(transport=transport.AsyncPyCurlTransport()) as client:
         # Record when we start
         response_received_time = None
         chunk_times = []
