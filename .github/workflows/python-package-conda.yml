@@ -25,16 +25,21 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Add conda to system path
+      - name: Set up conda
+        uses: conda-incubator/setup-conda-standalone@00a34805e93a8b640aee5f8a20e8f481ad77e3b4 # v0.1.0
+        with:
+          channel: conda-forge
+          destination-directory: ${{ runner.temp }}/conda-standalone
+
+      - name: Create conda environment
         run: |
-          # $CONDA is an environment variable pointing to the root of the miniconda directory
-          echo $CONDA/bin >> $GITHUB_PATH
+          "$CONDA_EXE" create --yes --prefix "$RUNNER_TEMP/conda-env" python=3.11 conda-pypi pytest nginx pytest-asyncio pytest-xprocess trustme httpx2 pycurl h2 chardet zstandard brotli trio uvicorn cryptography
+          echo "$RUNNER_TEMP/conda-env/bin" >> "$GITHUB_PATH"
 
       - name: Install dependencies
         run: |
-          conda install conda-pypi pytest nginx pytest-asyncio pytest-xprocess trustme httpx2 pycurl h2 chardet zstandard brotli trio uvicorn cryptography
-          conda pypi install --ignore-channels socksio
-          conda pypi install -e httpx2-pycurl/
+          "$RUNNER_TEMP/conda-env/bin/conda" pypi install --prefix "$RUNNER_TEMP/conda-env" --ignore-channels socksio
+          "$RUNNER_TEMP/conda-env/bin/conda" pypi install --prefix "$RUNNER_TEMP/conda-env" --editable httpx2-pycurl/
 
       - name: Apply httpx2 patch
         run: |
