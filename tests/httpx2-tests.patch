@@ -1,9 +1,9 @@
-diff --git a/tests/conftest.py b/tests/conftest.py
-index 858bca1..b5d70c0 100644
---- a/tests/conftest.py
-+++ b/tests/conftest.py
-@@ -285,3 +285,84 @@ def server() -> typing.Iterator[TestServer]:
-     config = Config(app=app, lifespan="off", loop="asyncio")
+diff --git a/tests/httpx2/conftest.py b/tests/httpx2/conftest.py
+index 8aa3b8a..9d6b432 100644
+--- a/tests/httpx2/conftest.py
++++ b/tests/httpx2/conftest.py
+@@ -293,3 +293,84 @@ def server(free_tcp_port_factory: Callable[[], int]) -> Iterator[TestServer]:
+     config = Config(app=app, lifespan="off", loop="asyncio", ws="none", port=free_tcp_port_factory())
      server = TestServer(config=config)
      yield from serve_in_thread(server)
 +
