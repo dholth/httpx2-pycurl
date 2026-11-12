@@ -66,11 +66,11 @@ conda pypi install httpx2-pycurl
 
 ## Performance
 
-`httpx2-pycurl` is in early development but it passes most `httpx2` tests and has
-good performance. Our `tests/bench.py` uses `asyncio.gather()` to make many
-`http/2` requests to `https://httpbingo.org/get` using `httpx2`, `niquests`, and
-`httpx2` with `httpx2-pycurl`'s transport. `httpx2-pycurl` is the fastest library
-tested.
+Before the rename, `httpx-pycurl` was tested against `httpx`. It is in early
+development but it passed most `httpx` tests and has good performance. Our
+`tests/bench.py` uses `asyncio.gather()` to make many `http/2` requests to
+`https://httpbingo.org/get` using `httpx`, `niquests`, and `httpx` with
+`httpx-pycurl`'s transport. `httpx-pycurl` was the fastest library tested.
 
 Running `tests/bench.py [N]` shows that the more efficient `http/2` libraries
 shine when performing large numbers of parallel requests, and are closer

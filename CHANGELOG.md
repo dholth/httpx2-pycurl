@@ -1,3 +1,6 @@
+# 0.0.7
+- Rename to httpx2-pycurl, use httpx2.
+
 # 0.0.6
 
 - Improve cleanup on `CurlMulti.close()`; `AsyncCurl()` now avoids calling
