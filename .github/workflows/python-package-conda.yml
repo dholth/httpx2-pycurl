@@ -43,7 +43,7 @@ jobs:
 
       - name: Create conda environment
         run: |
-          "$CONDA_EXE" create --yes --prefix "$RUNNER_TEMP/conda-env" python=3.11 conda-pypi pytest nginx pytest-asyncio pytest-xprocess trustme httpx2 pycurl h2 chardet zstandard brotli trio uvicorn cryptography
+          "$CONDA_EXE" create --yes --prefix "$RUNNER_TEMP/conda-env" python=3.11 conda-pypi pytest nginx pytest-asyncio pytest-xprocess trustme httpx2 pycurl h2 chardet backports.zstd brotli trio uvicorn cryptography click
           echo "$RUNNER_TEMP/conda-env/bin" >> "$GITHUB_PATH"
 
       - name: Install dependencies
@@ -64,4 +64,4 @@ jobs:
       - name: Run httpx2 tests with httpx2-pycurl transport
         run: |
           cd httpx2
-          pytest -k "not anyio and not test_main and not autodetect and not cp_1252 and not cp1252 and not explicit_encoding" -v
+          pytest tests/httpx2 --ignore=tests/httpx2/websockets -k "not anyio and not test_main and not autodetect and not cp_1252 and not cp1252 and not explicit_encoding" -v

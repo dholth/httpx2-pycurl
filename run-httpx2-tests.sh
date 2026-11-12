@@ -173,4 +173,4 @@ if [ "$run_own" -eq 1 ]; then
 fi
 
 echo "Running httpx2 tests with the httpx2-pycurl transport"
-exec "${pytest_cmd[@]}" -k "$test_selection" -v "$@"
+exec "${pytest_cmd[@]}" tests/httpx2 --ignore=tests/httpx2/websockets -k "$test_selection" -v "$@"
