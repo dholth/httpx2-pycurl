@@ -31,15 +31,25 @@ jobs:
           channel: conda-forge
           destination-directory: ${{ runner.temp }}/conda-standalone
 
+      - name: Configure conda channels
+        run: |
+          cat > "$RUNNER_TEMP/condarc" <<'EOF'
+          channels:
+            - conda-forge
+          default_channels: []
+          channel_priority: strict
+          EOF
+          echo "CONDARC=$RUNNER_TEMP/condarc" >> "$GITHUB_ENV"
+
       - name: Create conda environment
         run: |
-          "$CONDA_EXE" create --yes --prefix "$RUNNER_TEMP/conda-env" -c conda-forge python=3.11 conda-pypi pytest nginx pytest-asyncio pytest-xprocess trustme httpx2 pycurl h2 chardet zstandard brotli trio uvicorn cryptography
+          "$CONDA_EXE" create --yes --prefix "$RUNNER_TEMP/conda-env" python=3.11 conda-pypi pytest nginx pytest-asyncio pytest-xprocess trustme httpx2 pycurl h2 chardet zstandard brotli trio uvicorn cryptography
           echo "$RUNNER_TEMP/conda-env/bin" >> "$GITHUB_PATH"
 
       - name: Install dependencies
         run: |
-          "$RUNNER_TEMP/conda-env/bin/conda" pypi install --prefix "$RUNNER_TEMP/conda-env" -c conda-forge socksio
-          "$RUNNER_TEMP/conda-env/bin/conda" pypi install --prefix "$RUNNER_TEMP/conda-env" -c conda-forge --editable httpx2-pycurl/
+          "$RUNNER_TEMP/conda-env/bin/conda" pypi install --prefix "$RUNNER_TEMP/conda-env" socksio
+          "$RUNNER_TEMP/conda-env/bin/conda" pypi install --prefix "$RUNNER_TEMP/conda-env" --editable httpx2-pycurl/
 
       - name: Apply httpx2 patch
         run: |
