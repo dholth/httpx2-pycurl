@@ -64,4 +64,4 @@ jobs:
       - name: Run httpx2 tests with httpx2-pycurl transport
         run: |
           cd httpx2
-          pytest tests/httpx2 --ignore=tests/httpx2/websockets -k "not anyio and not test_main and not autodetect and not cp_1252 and not cp1252 and not explicit_encoding" -v
+          pytest tests/httpx2 --ignore=tests/httpx2/websockets  -o asyncio_default_fixture_loop_scope=fixture-scope -k "not anyio and not test_main and not autodetect and not cp_1252 and not cp1252 and not explicit_encoding" -v
