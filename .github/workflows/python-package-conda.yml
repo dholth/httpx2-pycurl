@@ -43,7 +43,7 @@ jobs:
 
       - name: Create conda environment
         run: |
-          "$CONDA_EXE" create --yes --prefix "$RUNNER_TEMP/conda-env" python=3.11 conda-pypi pytest pytest-asyncio pytest-xprocess nginx trustme httpx2 pycurl h2 chardet backports.zstd brotli trio uvicorn cryptography click
+          "$CONDA_EXE" create --yes --prefix "$RUNNER_TEMP/conda-env" python=3.11 conda-pypi pytest pytest-asyncio pytest-xprocess nginx trustme httpx2 pycurl h2 chardet backports.zstd brotli-python trio uvicorn cryptography click rich
           echo "$RUNNER_TEMP/conda-env/bin" >> "$GITHUB_PATH"
 
       - name: Install dependencies
