@@ -8,7 +8,7 @@ version = "0.0.7"
 description = "An httpx2 transport powered by pycurl"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["httpx2>=2.16", "pycurl>=7.45", "certifi"]
+dependencies = ["httpx2>=2.16", "pycurl>=7.47", "certifi"]
 license = "MIT"
 license-file = "LICENSE"
 

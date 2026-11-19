@@ -1,4 +1,9 @@
+# ** Current Development **
+
+- Replace `AsyncCurl()` with `pycurl.AsyncCurlMulti` (requires pycurl 7.47+).
+
 # 0.0.7
+
 - Rename to httpx2-pycurl, use httpx2.
 
 # 0.0.6
